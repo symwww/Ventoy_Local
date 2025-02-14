@@ -1,0 +1,4 @@
+wimboot follows GPLv2+ license (see gpl-2.0.txt)
+
+Ventoy modified the code and follow the same license as wimboot.
+

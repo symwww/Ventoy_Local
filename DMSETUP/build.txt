@@ -1,0 +1,70 @@
+Build a static linked, small dmsetup tool
+
+======== Source Code ========
+use an old version of dmsetup
+http://vault.centos.org/5.3/os/SRPMS/device-mapper-1.02.28-2.el5.src.rpm
+https://www.fefe.de/dietlibc/dietlibc-0.34.tar.xz
+
+======== Build Environment ======== 
+build for 32bit, static linked with dietlibc
+1. install centos 6.10 i386 with CentOS-6.10-i386-bin-DVD1.iso
+2. yum install gcc kernel-devel package
+3. install dietc libc (just make && make install)
+4. export PATH=$PATH:/opt/diet/bin
+
+======== Build Step ======== 
+1. extract device mapper source code
+2. CC="diet gcc" ./configure --disable-nls  --disable-selinux --disable-shared
+3. modify include/configure.h file
+   --- delete the line with "#define malloc rpl_malloc"
+   --- add 2 defines as follow:
+       #ifndef UINT32_MAX
+       #define UINT32_MAX  (4294967295U)
+       #endif
+       
+       #ifndef UINT64_C
+       #define UINT64_C(c) c ## ULL
+       #endif
+   
+4. make
+5. strip dmsetup/dmsetup
+6. get dmsetup/dmsetup as the dmsetup32 binary file
+
+
+
+
+
+
+======================== Build for 64bit dmsetup =========================
+1. extract device mapper source code
+2. ./configure --disable-nls  --disable-selinux --disable-shared  --enable-static_link CC='gcc -specs /usr/local/musl/lib/musl-gcc.specs'
+3. touch include/linux/limits.h include/linux/types.h   
+   echo '#include <sys/mount.h>' > include/linux/fs.h
+4. make
+5. strip --strip-all dmsetup/dmsetup.static
+6. get dmsetup/dmsetup.static as the dmsetup64 binary file
+
+
+======================== Build for arm64 dmsetup =========================
+1. extract device mapper source code
+2. ./configure CC=aarch64-linux-gcc --target=arm --host=x86_64-linux-gnu --disable-nls  --disable-selinux --disable-shared  --enable-static_link
+3. modify include/configure.h file
+   --- delete the line with "#define malloc rpl_malloc"
+4. make
+5. aarch64-linux-strip dmsetup/dmsetup.static
+6. get dmsetup/dmsetup.static as the dmsetupaa64 binary file
+
+
+======================== Build for mips64 dmsetup =========================
+1. extract device mapper source code
+2. ./configure CC="mips64el-linux-musl-gcc -mips64r2 -mabi=64" --target=mips --host=x86_64-linux-gnu --disable-nls  --disable-selinux --disable-shared  --enable-static_link
+3. modify include/configure.h file
+   --- delete the line with "#define malloc rpl_malloc"
+4. make
+5. mips64el-linux-musl-strip dmsetup/dmsetup.static
+6. get dmsetup/dmsetup.static as the dmsetupm64e binary file
+
+
+
+
+
