@@ -9,7 +9,8 @@ build_bios() {
         echo "Failed"
         exit 1
     fi
-
+    LOOP=$(losetup -f)
+    mknod -m 666  $LOOP b 7 0
     mkdir -p ./mnt
     mount bin/ipxe.iso ./mnt
 

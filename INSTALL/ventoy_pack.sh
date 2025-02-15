@@ -31,8 +31,8 @@ cd ../Unix
 sh pack_unix.sh
 cd -
 
-mknod -m 666  /dev/loop0 b 7 0
 LOOP=$(losetup -f)
+mknod -m 666  $LOOP b 7 0
 
 rm -f img.bin
 dd if=/dev/zero of=img.bin bs=1M count=256 status=none
