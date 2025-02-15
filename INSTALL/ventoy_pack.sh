@@ -128,7 +128,7 @@ dd status=none bs=1024 count=16  if=./tool/x86_64/vtoycli  of=$tmpmnt/tool/mount
 dd status=none bs=1024 count=16  if=./tool/aarch64/vtoycli of=$tmpmnt/tool/mount.exfat-fuse_aarch64
 
 
-rm -f $tmpmnt/grub/i386-pc/*.img
+# rm -f $tmpmnt/grub/i386-pc/*.img
 
 
 umount $tmpmnt && rm -rf $tmpmnt
