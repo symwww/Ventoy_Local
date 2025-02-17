@@ -31,15 +31,58 @@ cd Ventoy_Local
 
 得到ventoy.img.xz后解压得到ventoy本体，请自行部署至第一分区。
 
-/EFI/BOOT/grubia32_real.efi
+EFI/BOOT/grubia32_real.efi
 
-/EFI/BOOT/grubx64_real.efi
+EFI/BOOT/grubx64_real.efi
 
 分别为32/64位下的UEFI引导文件。
 
-/grub/i386-pc/core.img
+grub/i386-pc/core.img
 
 为LeagcyBIOS下的引导文件，请自行使用。
+
+## 改动内容
+
+```c
+// GRUB2/MOD_SRC/grub-2.04/grub-core/ventoy/ventoy_browser.c 
+static int ventoy_browser_iterate_partition(struct grub_disk *disk, const grub_partition_t partition, void *data);
+
+// GRUB2/MOD_SRC/grub-2.04/grub-core/ventoy/ventoy_cmd.c
+static int ventoy_set_check_result(int ret, const char *msg);
+static int ventoy_check_official_device(grub_device_t dev);
+    // 以及调整一些 VTOY_CMD_CHECK(1);
+
+// EDK2/edk2_mod/edk2-edk2-stable201911/MdeModulePkg/Application/Ventoy/Ventoy.c
+STATIC VOID ventoy_warn_invalid_device(VOID);
+STATIC EFI_STATUS EFIAPI ventoy_find_iso_disk(IN EFI_HANDLE ImageHandle);
+STATIC EFI_STATUS EFIAPI ventoy_parse_cmdline(IN EFI_HANDLE ImageHandle);
+
+// Patch vtoyjump (required for Windows/WinPE ISOs)
+// vtoyjump/vtoyjump/vtoyjump.c
+static int DecompressInjectionArchive(const char *archive, DWORD PhyDrive);
+static BOOL CheckVentoyDisk(DWORD DiskNum);
+static int VentoyHook(ventoy_os_param *param);
+ if (DiskSig == VtoySig) //  && VtoyDiskExtent.StartingOffset.QuadPart == SIZE_1MB
+ {
+     Log("Ventoy Disk Sig match");
+     vtoyfind = TRUE;
+     break;
+ }
+
+// Patch vtoyjump (required for Linux ISOs)
+// VtoyTool/vtoydump.c
+static int vtoy_vlnk_printf(ventoy_os_param *param, char *diskname);
+static int vtoy_print_os_param(ventoy_os_param *param, char *diskname);
+    //该函数下p2改为p1
+        if (strstr(diskname, "nvme") || strstr(diskname, "mmc") || strstr(diskname, "nbd"))
+        {
+            snprintf(diskpath, sizeof(diskpath) - 1, "/sys/class/block/%sp1/size", diskname);
+        }
+        else
+        {
+            snprintf(diskpath, sizeof(diskpath) - 1, "/sys/class/block/%s1/size", diskname);
+        }
+```
 
 ## 注意事项
 
@@ -49,7 +92,6 @@ cd Ventoy_Local
 
 ## 已知问题
 
-- 本版本Windows安装镜像无法在进入系统后自动挂载，Windows PE iso也无法自动挂载。
 - 原版Ventoy Linux启动时通过磁盘签名查找磁盘，如果出现冲突，则无法正确查找。
 
 ## 致谢

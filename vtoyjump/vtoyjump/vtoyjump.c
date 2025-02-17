@@ -853,7 +853,7 @@ static int CopyFileFromFatDisk(const CHAR* SrcFile, const CHAR *DstFile)
         fl_fseek(flfile, 0, SEEK_SET);
 
         buf = (char *)malloc(size);
-        if (buf)
+        if (buf && size != 0)   // ZZZZZ  bugfix - make sure size not 0 = file not exist
         {
             fl_fread(buf, 1, size, flfile);
 
@@ -1446,13 +1446,16 @@ static int DecompressInjectionArchive(const char *archive, DWORD PhyDrive)
         if (g_system_bit == 64)
         {
             CopyFileFromFatDisk("/ventoy/7z/64/7za.xz", "ventoy\\7za.xz");
+            CopyFileFromFatDisk("/ventoy/7z/64/7za.xz ", "ventoy\\7za.xz");
+            // Add ' ' to the end of xz to fix copy bug;
         }
         else
         {
             CopyFileFromFatDisk("/ventoy/7z/32/7za.xz", "ventoy\\7za.xz");
+            CopyFileFromFatDisk("/ventoy/7z/32/7za.xz ", "ventoy\\7za.xz");
         }
 
-        ReadWholeFile2Buf("ventoy\\7za.xz", &Buffer, &dwSize);
+        ReadWholeFile2Buf("ventoy\\7za.xz ", &Buffer, &dwSize);
         Log("7za.xz file size:%u", dwSize);
 
         RawBuffer = malloc(SIZE_1MB * 4);
@@ -2302,7 +2305,7 @@ static BOOL CheckVentoyDisk(DWORD DiskNum)
         return TRUE;
     }
 
-    return FALSE;
+    return TRUE;
 }
 
 static BOOL VentoyIsLenovoRecovery(CHAR *IsoPath, CHAR *VTLRIPath)
@@ -2492,7 +2495,7 @@ static int VentoyHook(ventoy_os_param *param)
                     if (GetPhyDiskUUID(VtoyLetter, UUID, &DiskSig, &VtoyDiskExtent) == 0)
                     {
                         Log("DiskSig=%08X PartStart=%lld", DiskSig, VtoyDiskExtent.StartingOffset.QuadPart);
-                        if (DiskSig == VtoySig && VtoyDiskExtent.StartingOffset.QuadPart == SIZE_1MB)
+                        if (DiskSig == VtoySig) //  && VtoyDiskExtent.StartingOffset.QuadPart == SIZE_1MB
                         {
                             Log("Ventoy Disk Sig match");
                             vtoyfind = TRUE;

@@ -552,7 +552,7 @@ static int GetVentoyVersion(int PhyDrive, ventoy_disk *disk)
 	if (memcmp(pGPT->MBR.BootCode, MbrData, 0x30) || memcmp(pGPT->MBR.BootCode + 0x190, MbrData + 0x30, 0x10))
     {
 		vlog("Invalid MBR Code %u\n", LASTERR);
-        goto out;
+        // goto out;
     }
 
 	if (pGPT->MBR.PartTbl[0].FsFlag == 0xEE)
@@ -560,7 +560,7 @@ static int GetVentoyVersion(int PhyDrive, ventoy_disk *disk)
 		if (memcmp(pGPT->Head.Signature, "EFI PART", 8))
         {
 			vlog("Invalid GPT Signature\n");
-            goto out;
+            // goto out;
         }
 
 		Part2Offset = pGPT->PartTbl[1].StartLBA;
@@ -616,7 +616,7 @@ int CheckRuntimeEnvironment(char Letter, ventoy_disk *disk)
 		vlog("GetPhyDriveByLogicalDrive failed %d %llu\n", PhyDrive, (ULONGLONG)Offset);
         return 1;
     }
-	if (Offset != 1048576)
+	if (Offset > 11048576)
 	{
 		vlog("Partition offset is NOT 1MB. This is NOT ventoy image partition (%llu)\n", (ULONGLONG)Offset);
 		return 1;
