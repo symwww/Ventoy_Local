@@ -36,45 +36,8 @@ if [ "$vtdiskname" = "unknown" ]; then
     exit 0
 fi
 
-if echo $vtdiskname | egrep -q "nvme.*p[0-9]$|mmc.*p[0-9]$|nbd.*p[0-9]$"; then
-    vPart="${vtdiskname}p2"
-else
-    vPart="${vtdiskname}2"
-fi
+ventoy_udev_disk_common_hook "${vtdiskname#/dev/}2"
 
-# TinyCore linux distro doesn't contain dmsetup, we use aoe here
-sudo modprobe aoe aoe_iflist=lo
-if [ -e /sys/module/aoe ]; then
-
-    if ! [ -d /lib64 ]; then
-        vtlog "link lib64"
-        NEED_UNLIB64=1
-        ln -s /lib /lib64
-    fi
-
-    VBLADE_BIN=$(ventoy_get_vblade_bin)
-
-    sudo nohup $VBLADE_BIN -r -f $VTOY_PATH/ventoy_image_map 9 0 lo "$vtdiskname" > /dev/null &
-    sleep 2
-
-    while ! [ -b /dev/etherd/e9.0 ]; do
-        vtlog 'Wait for /dev/etherd/e9.0 ....'
-        sleep 2
-    done
-
-    sudo cp -a /dev/etherd/e9.0  "$vPart"
-
-    if [ -n "$NEED_UNLIB64" ]; then
-        vtlog "unlink lib64"
-        unlink /lib64
-    fi
-
-    ventoy_find_bin_run rebuildfstab
-else
-    vterr "aoe driver module load failed..."
-fi
-
-# OK finish
 PATH=$VTPATH_OLD
 
 set_ventoy_hook_finish

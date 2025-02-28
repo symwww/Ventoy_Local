@@ -19,13 +19,22 @@
 
 . /ventoy/hook/ventoy-hook-lib.sh
 
-if is_ventoy_hook_finished; then
-    exit 0
-fi
-
 vtlog "####### $0 $* ########"
 
 VTPATH_OLD=$PATH; PATH=$BUSYBOX_PATH:$VTOY_PATH/tool:$PATH
+
+
+ventoy_run_fuse() {
+    vtlog "ventoy_run_fuse $*"
+
+    mkdir -p $VTOY_PATH/mnt/fuse
+
+    vtoydm -p -f $VTOY_PATH/ventoy_image_map -d $1 > $VTOY_PATH/ventoy_dm_table
+    vtoy_fuse_iso -f $VTOY_PATH/ventoy_dm_table -m $VTOY_PATH/mnt/fuse
+
+    mount -t iso9660  $VTOY_PATH/mnt/fuse/ventoy.iso    $VTOY_PATH/mnt/iso
+}
+
 
 wait_for_usb_disk_ready
 
@@ -36,45 +45,8 @@ if [ "$vtdiskname" = "unknown" ]; then
     exit 0
 fi
 
-if echo $vtdiskname | egrep -q "nvme.*p[0-9]$|mmc.*p[0-9]$|nbd.*p[0-9]$"; then
-    vPart="${vtdiskname}p2"
-else
-    vPart="${vtdiskname}2"
+ventoy_run_fuse $vtdiskname
+
+if [ -f /ventoy/autoinstall ]; then
+    sh /ventoy/hook/default/auto_install_varexp.sh  /ventoy/autoinstall
 fi
-
-# TinyCore linux distro doesn't contain dmsetup, we use aoe here
-sudo modprobe aoe aoe_iflist=lo
-if [ -e /sys/module/aoe ]; then
-
-    if ! [ -d /lib64 ]; then
-        vtlog "link lib64"
-        NEED_UNLIB64=1
-        ln -s /lib /lib64
-    fi
-
-    VBLADE_BIN=$(ventoy_get_vblade_bin)
-
-    sudo nohup $VBLADE_BIN -r -f $VTOY_PATH/ventoy_image_map 9 0 lo "$vtdiskname" > /dev/null &
-    sleep 2
-
-    while ! [ -b /dev/etherd/e9.0 ]; do
-        vtlog 'Wait for /dev/etherd/e9.0 ....'
-        sleep 2
-    done
-
-    sudo cp -a /dev/etherd/e9.0  "$vPart"
-
-    if [ -n "$NEED_UNLIB64" ]; then
-        vtlog "unlink lib64"
-        unlink /lib64
-    fi
-
-    ventoy_find_bin_run rebuildfstab
-else
-    vterr "aoe driver module load failed..."
-fi
-
-# OK finish
-PATH=$VTPATH_OLD
-
-set_ventoy_hook_finish
